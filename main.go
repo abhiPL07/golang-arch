@@ -3,6 +3,11 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
+	"time"
+
+	"crypto/hmac"
+	"crypto/sha512"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -11,7 +16,16 @@ import (
 // 	First string
 // }
 
+var key = []byte{}
+
 func main() {
+	rand.Seed(time.Now().UnixNano())
+	max := 8
+	min := 0
+	for i := 1; i < 65; i++ {
+		x := rand.Intn(max-min+1) + 1
+		key = append(key, byte(x))
+	}
 	// p1 := person{
 	// 	First: "Jenny",
 	// }
@@ -124,4 +138,24 @@ func comparePassword(hashedPassword []byte, password string) error {
 		return fmt.Errorf("invalid password: %w", err)
 	}
 	return nil
+}
+
+func signMessage(msg []byte) ([]byte, error) {
+	h := hmac.New(sha512.New512_256, key)
+	_, err := h.Write(msg)
+	if err != nil {
+		return nil, fmt.Errorf("error in signMessage while hashing message: %w", err)
+	}
+	signature := h.Sum(nil)
+	return signature, nil
+}
+
+func checkSig(msg, sig []byte) (bool, error) {
+	newSig, err := signMessage(msg)
+	if err != nil {
+		return false, fmt.Errorf("error in checkSig while hashing message: %w", err)
+	}
+
+	same := hmac.Equal(newSig, sig)
+	return same, nil
 }
