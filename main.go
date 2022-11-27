@@ -1,13 +1,15 @@
 package main
 
 import (
-	"encoding/base64"
 	"fmt"
+	"log"
+
+	"golang.org/x/crypto/bcrypt"
 )
 
-type person struct {
-	First string
-}
+// type person struct {
+// 	First string
+// }
 
 func main() {
 	// p1 := person{
@@ -88,8 +90,38 @@ func main() {
 	// 	}
 	// 	log.Println(p)
 	// }
-	data := []byte("user:pass")
-	dst := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
-	base64.StdEncoding.Encode(dst, data)
-	fmt.Println(string(dst))
+
+	// data := []byte("user:pass")
+	// dst := make([]byte, base64.StdEncoding.EncodedLen(len(data)))
+	// base64.StdEncoding.Encode(dst, data)
+	// fmt.Println(string(dst))
+
+	password := "34jksnfksdn88934jkf"
+
+	hashedPassword, err := hashPassword(password)
+	if err != nil {
+		panic(err)
+	}
+
+	err = comparePassword(hashedPassword, password)
+	if err != nil {
+		log.Fatalln("Not logged in!")
+	}
+	log.Println("Logged in!")
+}
+
+func hashPassword(password string) ([]byte, error) {
+	bs, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, fmt.Errorf("error while generating bcrypt hash from password: %w", err)
+	}
+	return bs, nil
+}
+
+func comparePassword(hashedPassword []byte, password string) error {
+	err := bcrypt.CompareHashAndPassword(hashedPassword, []byte(password))
+	if err != nil {
+		return fmt.Errorf("invalid password: %w", err)
+	}
+	return nil
 }
